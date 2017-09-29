@@ -5,7 +5,7 @@ import i3ipc
 import subprocess as proc
 import fasteners
 import argparse
-
+import re
 
 LOCK_FILE = '/tmp/ws_name_lock'
 
@@ -15,15 +15,33 @@ def get_new_name(i3, input_name):
     workspace = i3.get_tree().find_focused().workspace()
     count = workspace.name.count(':')
     # unnamed workspace
-    if count in {0, 1}:
-        apps = workspace.name.split(':')[1]
-    # named workspace
-    elif count == 2:
-        apps = workspace.name.split(':')[2]
+    if count == 0:
+        apps = ''
+        current_name = ''
+    elif count == 1:
+        apps = ''
+        current_name = workspace.name.split(':')[1].strip()
     else:
-        raise ValueError
+        apps = workspace.name.split(':')[count].strip()
+        current_name = workspace.name.split(':')[1].strip()
 
-    new_name = "{}: {}:{}".format(workspace.num, input_name, apps)
+    # Allow for optional renumbering through input
+    leading_num = re.compile('^([1-9][0-9]?) *:?(.*)$')
+    match = leading_num.match(input_name)
+    if match:
+        workspace_num = match.group(1)
+        input_name = match.group(2).strip()
+    else:
+        workspace_num = workspace.num
+
+    if input_name == '':
+        input_name = current_name
+        
+    if apps == '':
+        new_name = "{}: {}".format(workspace_num, input_name)
+    else:
+        new_name = "{}: {}:{}".format(workspace_num, input_name, apps)
+
     return new_name, workspace
 
 
