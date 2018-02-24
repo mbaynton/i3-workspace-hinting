@@ -6,8 +6,10 @@ import subprocess as proc
 import fasteners
 import argparse
 import re
+import os
 
-LOCK_FILE = '/tmp/ws_name_lock'
+user = os.environ['LOGNAME']
+LOCK_FILE = "/tmp/{user!s}_ws_name_lock".format(**locals())
 
 
 @fasteners.interprocess_locked(LOCK_FILE)
